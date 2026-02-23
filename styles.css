@@ -1,0 +1,23 @@
+/* Reading View Line Numbers — gutter styling */
+
+.markdown-preview-section > div {
+  position: relative;
+}
+
+.rv-line-number {
+  position: absolute;
+  left: calc(-1 * var(--rv-gutter-width, 3.5em));
+  top: 0;
+
+  width: var(--rv-gutter-width, 3.5em);
+  text-align: right;
+  padding-right: 0.6em;
+
+  font-family: var(--font-monospace);
+  font-size: var(--font-smaller);
+  color: var(--text-faint);
+  line-height: var(--line-height-normal);
+
+  user-select: none;
+  pointer-events: none;
+}

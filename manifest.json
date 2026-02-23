@@ -1,0 +1,10 @@
+{
+  "id": "reading-view-line-numbers",
+  "name": "Reading View Line Numbers",
+  "version": "1.0.0",
+  "minAppVersion": "1.0.0",
+  "description": "Displays source-line numbers in the Reading View gutter.",
+  "author": "Richard Larsen",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
