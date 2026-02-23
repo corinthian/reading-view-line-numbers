@@ -22,6 +22,9 @@ export default class ReadingLineNumbersPlugin extends Plugin {
       (element: HTMLElement, context: MarkdownPostProcessorContext) => {
         if (!this.settings.enabled) return;
 
+        // Guard against double-processing on re-render
+        if (element.querySelector(".rv-line-number")) return;
+
         let leafDisabled = false;
         this.app.workspace.iterateAllLeaves((leaf) => {
           if (leafDisabled) return;
@@ -38,7 +41,16 @@ export default class ReadingLineNumbersPlugin extends Plugin {
         const info = context.getSectionInfo(element);
         if (!info) return;
 
-        const lineNumber = info.lineStart + 1;
+        const fmLines = getFrontmatterLineCount(info.text);
+
+        // Skip sections that are part of the frontmatter
+        if (info.lineStart < fmLines) return;
+
+        let lineNumber = info.lineStart + 1;
+
+        if (this.settings.countFromContent) {
+          lineNumber = info.lineStart - fmLines + 1;
+        }
 
         const gutter = document.createElement("span");
         gutter.className = "rv-line-number";
@@ -150,4 +162,10 @@ export default class ReadingLineNumbersPlugin extends Plugin {
       }
     });
   }
+}
+
+function getFrontmatterLineCount(text: string): number {
+  const match = text.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  if (!match) return 0;
+  return match[0].split(/\r?\n/).length - 1;
 }
