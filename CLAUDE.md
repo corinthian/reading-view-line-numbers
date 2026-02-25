@@ -21,16 +21,20 @@ Numbers map rendered blocks back to their source line positions (matching Editin
   number that visually overlaps the first content block
 
 ## Settings
-- `enabled: boolean` (default: true) — global toggle
+- `enabled: boolean` (default: true) — controls *default* state when opening a reading view
 - `countFromContent: boolean` (default: false) — when true, subtract frontmatter
   line count so first content line = 1
 - On change: iterate `app.workspace.iterateAllLeaves()`, rerender preview-mode MarkdownViews
 
 ## Per-Window Toggle
-- `disabledLeaves: WeakSet<HTMLElement>` keyed by `leaf.view.previewMode.containerEl`
+- `leafOverrides: WeakSet<HTMLElement>` keyed by `leaf.view.previewMode.containerEl`
+- Presence means "opposite of the global default" (not simply "disabled")
+- Visibility rule: `shouldShow = settings.enabled XOR leafOverrides.has(containerEl)`
+- Toggle action: flip presence in `leafOverrides` (add if absent, delete if present)
 - Three entry points: body contextmenu (DOM event), tab right-click and file navigator
   right-click (both via `workspace.on('file-menu', ...)`)
 - File navigator case: finds all reading view leaves showing that file path, toggles all
+- `isEnabled` passed to menu helper: `settings.enabled !== leafOverrides.has(containerEl)`
 
 ## Known Gotchas
 - Obsidian plugin folder name MUST match the `id` field in manifest.json
@@ -53,7 +57,7 @@ npm install
 npm run build   # esbuild output to main.js
 
 # Deploy to vault (folder must be named reading-view-line-numbers)
-cp main.js styles.css "/path/to/vault/.obsidian/plugins/reading-view-line-numbers/"
+cp main.js styles.css "/Users/rlarsen/Documents/Obsidian/rlarsen vault/.obsidian/plugins/reading-view-line-numbers/"
 ```
 
 ## Plan Reference
