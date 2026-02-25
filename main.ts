@@ -7,7 +7,7 @@ import {
 
 export default class ReadingLineNumbersPlugin extends Plugin {
   settings: ReadingLineNumbersSettings;
-  private disabledLeaves = new WeakSet<HTMLElement>();
+  private leafOverrides = new WeakSet<HTMLElement>();
 
   async onload() {
     this.settings = Object.assign(
@@ -20,23 +20,22 @@ export default class ReadingLineNumbersPlugin extends Plugin {
 
     this.registerMarkdownPostProcessor(
       (element: HTMLElement, context: MarkdownPostProcessorContext) => {
-        if (!this.settings.enabled) return;
-
         // Guard against double-processing on re-render
         if (element.querySelector(".rv-line-number")) return;
 
-        let leafDisabled = false;
+        let leafOverridden = false;
         this.app.workspace.iterateAllLeaves((leaf) => {
-          if (leafDisabled) return;
+          if (leafOverridden) return;
           if (
             leaf.view instanceof MarkdownView &&
             leaf.view.getMode() === "preview" &&
             leaf.view.previewMode.containerEl.contains(element)
           ) {
-            leafDisabled = this.disabledLeaves.has(leaf.view.previewMode.containerEl);
+            leafOverridden = this.leafOverrides.has(leaf.view.previewMode.containerEl);
           }
         });
-        if (leafDisabled) return;
+        const shouldShow = this.settings.enabled !== leafOverridden;
+        if (!shouldShow) return;
 
         const info = context.getSectionInfo(element);
         if (!info) return;
@@ -79,7 +78,7 @@ export default class ReadingLineNumbersPlugin extends Plugin {
 
       const view = (targetLeaf as WorkspaceLeaf).view as MarkdownView;
       const containerEl = view.previewMode.containerEl;
-      const isEnabled = !this.disabledLeaves.has(containerEl);
+      const isEnabled = this.settings.enabled !== this.leafOverrides.has(containerEl);
 
       const menu = new Menu();
       menu.addItem((item) =>
@@ -87,10 +86,10 @@ export default class ReadingLineNumbersPlugin extends Plugin {
           .setTitle(isEnabled ? "Hide line numbers" : "Show line numbers")
           .setIcon("list-ordered")
           .onClick(() => {
-            if (isEnabled) {
-              this.disabledLeaves.add(containerEl);
+            if (this.leafOverrides.has(containerEl)) {
+              this.leafOverrides.delete(containerEl);
             } else {
-              this.disabledLeaves.delete(containerEl);
+              this.leafOverrides.add(containerEl);
             }
             view.previewMode.rerender(true);
           })
@@ -103,12 +102,12 @@ export default class ReadingLineNumbersPlugin extends Plugin {
         // Tab right-click: leaf is provided directly
         if (leaf && leaf.view instanceof MarkdownView && leaf.view.getMode() === "preview") {
           const containerEl = leaf.view.previewMode.containerEl;
-          const isEnabled = !this.disabledLeaves.has(containerEl);
+          const isEnabled = this.settings.enabled !== this.leafOverrides.has(containerEl);
           this.addToggleMenuItem(menu, isEnabled, () => {
-            if (isEnabled) {
-              this.disabledLeaves.add(containerEl);
+            if (this.leafOverrides.has(containerEl)) {
+              this.leafOverrides.delete(containerEl);
             } else {
-              this.disabledLeaves.delete(containerEl);
+              this.leafOverrides.add(containerEl);
             }
             (leaf.view as MarkdownView).previewMode.rerender(true);
           });
@@ -130,14 +129,14 @@ export default class ReadingLineNumbersPlugin extends Plugin {
         if (previewLeaves.length === 0) return;
 
         const firstContainer = (previewLeaves[0].view as MarkdownView).previewMode.containerEl;
-        const isEnabled = !this.disabledLeaves.has(firstContainer);
+        const isEnabled = this.settings.enabled !== this.leafOverrides.has(firstContainer);
         this.addToggleMenuItem(menu, isEnabled, () => {
           previewLeaves.forEach((l) => {
             const containerEl = (l.view as MarkdownView).previewMode.containerEl;
-            if (isEnabled) {
-              this.disabledLeaves.add(containerEl);
+            if (this.leafOverrides.has(containerEl)) {
+              this.leafOverrides.delete(containerEl);
             } else {
-              this.disabledLeaves.delete(containerEl);
+              this.leafOverrides.add(containerEl);
             }
             (l.view as MarkdownView).previewMode.rerender(true);
           });

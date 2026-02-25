@@ -25,7 +25,7 @@ export class ReadingLineNumbersSettingTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Show line numbers in Reading View")
-      .setDesc("Display source-line numbers in the left gutter of Reading View.")
+      .setDesc("Default state when opening a file in Reading View. Right-click any reading view to override per window.")
       .addToggle((toggle) =>
         toggle
           .setValue(this.plugin.settings.enabled)
